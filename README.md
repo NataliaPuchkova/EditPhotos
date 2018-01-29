@@ -1,2 +1,9 @@
 # EditPhotos
-Java Library to do some changes with photos
+Java Library to do some changes with photos:
+- Do picture Brightly
+- Using a limit of colors
+
+Based on https://introcs.cs.princeton.edu/java/stdlib/Picture.java.html
+
+Tools:
+http://www.colortools.net/color_compare_colors.html
