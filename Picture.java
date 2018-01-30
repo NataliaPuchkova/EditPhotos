@@ -1,3 +1,4 @@
+
 /******************************************************************************
  *  Compilation:  javac Picture.java
  *  Execution:    java Picture imagename
@@ -37,7 +38,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.KeyStroke;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  *  This class provides methods for manipulating individual pixels of
@@ -82,9 +83,6 @@ import java.util.HashSet;
  *
  *  @author Robert Sedgewick
  *  @author Kevin Wayne
- *  
- *  @update
- *  Natalia Puchkova: added setBrightly(), setSimple() methods
  */
 public final class Picture implements ActionListener {
     private BufferedImage image;               // the rasterized image
@@ -129,7 +127,8 @@ public final class Picture implements ActionListener {
             for (int row = 0; row < height(); row++)
                 image.setRGB(col, row, picture.image.getRGB(col, row));
     }
- /**
+
+   /**
      * Creates a picture by reading an image from a file or URL.
      *
      * @param  filename the name of the file (.png, .gif, or .jpg) or URL.
@@ -168,7 +167,8 @@ public final class Picture implements ActionListener {
         }
     }
 
-   * Creates a picture by reading the image from a PNG, GIF, or JPEG file.
+   /**
+     * Creates a picture by reading the image from a PNG, GIF, or JPEG file.
      *
      * @param file the file
      * @throws IllegalArgumentException if cannot read image
@@ -220,7 +220,7 @@ public final class Picture implements ActionListener {
    /**
      * Displays the picture in a window on the screen.
      */
-public void show() {
+    public void show() {
 
         // create the GUI for viewing the image if needed
         if (frame == null) {
@@ -260,7 +260,8 @@ public void show() {
     public int height() {
         return height;
     }
-  /**
+
+   /**
      * Returns the width of the picture.
      *
      * @return the width of the picture (in pixels)
@@ -293,7 +294,8 @@ public void show() {
         int rgb = getRGB(col, row);
         return new Color(rgb);
     }
- /**
+
+   /**
      * Returns the color of pixel ({@code col}, {@code row}) as an {@code int}.
      * Using this method can be more efficient than {@link #get(int, int)} because
      * it does not create a {@code Color} object.
@@ -319,7 +321,7 @@ public void show() {
      * @throws IllegalArgumentException unless both {@code 0 <= col < width} and {@code 0 <= row < height}
      * @throws IllegalArgumentException if {@code color} is {@code null}
      */
- public void set(int col, int row, Color color) {
+    public void set(int col, int row, Color color) {
         validateColumnIndex(col);
         validateRowIndex(row);
         if (color == null) throw new IllegalArgumentException("color argument is null");
@@ -370,7 +372,7 @@ public void show() {
      *
      * @return a string representation of this picture
      */
-  public String toString() {
+    public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(width +"-by-" + height + " picture (RGB values given in hex)\n");
         for (int row = 0; row < height; row++) {
@@ -384,30 +386,107 @@ public void show() {
         }
         return sb.toString().trim();
     }
-        public void setBrightly() {
+ 	public void setBrightly(){
                         for (int row = 0; row < height; row++) {
                                 for (int col = 0; col < width; col++) {
                                         int rgb = 0;
                                         if (isOriginUpperLeft) rgb = image.getRGB(col, row);
                                         else                   rgb = image.getRGB(col, height - row - 1);
                                         setRGB(col, row, rgb | 0x0F0F0F);
-                                }
-                        }
-        }
-        public void setSimple(int size) {
-                HashSet<Integer> set = new HashSet<Integer>();
-                if (size>=100)
+                                }       
+                        }      
+ 	}
+
+ 	public HashMap<Integer, ArrayList<Node>> getZones() {
+			ArrayList<Node> tmp;
+			HashMap<Integer, ArrayList<Node>> map = new HashMap<Integer, ArrayList<Node>>();
                         for (int row = 0; row < height; row++) {
                                 for (int col = 0; col < width; col++) {
-                                        int rgb = 0;
+					int rgb = 0;
                                         if (isOriginUpperLeft) rgb = image.getRGB(col, row);
                                         else                   rgb = image.getRGB(col, height - row - 1);
-                                        setRGB(col, row, rgb & 0xF0F0F0);
-                                        set.add(rgb&0xF0F0F0);
+					if (!map.containsKey(rgb))
+						tmp = new ArrayList<Node>();
+					else 
+						tmp = map.get(rgb);
+						tmp.add(new Node(row, col, rgb));		
+						map.put(rgb, tmp);	
                                 }
                         }
-        if (size < 100 && size>= 30 ){
-                set = new HashSet<Integer>();
+		return map;
+        }
+
+        public int[][] cleanArray(){
+		int[][] arr = new int[width][height];
+                for (int row = 0; row < height; row++) {
+                                for (int col = 0; col < width; col++) {
+                                        arr[col][row] = 0;
+                                }
+                }
+		return arr;
+	}
+	public void initArray(int[][] arr, ArrayList<Node> list){
+		for(Node node:list){
+			arr[node.y][node.x]=1;
+		}
+		
+	}
+
+	public boolean isLeft(int[][] arr, int col, int row){
+		return arr[col][row]==arr[col-1][row];
+	}
+
+	public boolean isRight(int[][] arr, int col, int row){
+                return arr[col][row]==arr[col+1][row];
+        }
+
+	public boolean isUp(int[][] arr, int col, int row){
+                return arr[col][row]==arr[col][row-1];
+        }
+
+ 	public boolean isDown(int[][] arr, int col, int row){
+                return arr[col][row]==arr[col][row+1];
+        }
+
+	public void remove(int[][] arr){
+		 for (int row = 1; row < height-1; row++) {
+                                for (int col = 1; col < width-1; col++) {
+					if(arr[col][row]==1) 
+						if (isLeft(arr, col, row) &&
+						    isRight(arr, col, row) &&
+						    isUp(arr, col, row) &&
+						    isDown(arr, col, row))
+					setRGB(col, row, 0xFFFFFF);			
+				}
+		}
+	}
+
+        public void getZones(int i) {
+		HashMap<Integer, ArrayList<Node>>map = getZones();
+		for(Map.Entry<Integer, ArrayList<Node>> entry: map.entrySet()){
+			int[][] arr = cleanArray();
+			Integer rgb = (Integer) entry.getKey();
+			ArrayList<Node> list = (ArrayList<Node>)entry.getValue();
+			initArray(arr, list);
+                        remove(arr);
+		}
+ 
+        }
+
+	public void setSimple(int size) { 
+        	HashSet<Integer> set = new HashSet<Integer>();
+		if (size>=100)
+			for (int row = 0; row < height; row++) {
+            			for (int col = 0; col < width; col++) {
+                			int rgb = 0;
+                			if (isOriginUpperLeft) rgb = image.getRGB(col, row);
+                			else                   rgb = image.getRGB(col, height - row - 1);
+					setRGB(col, row, rgb & 0xF0F0F0);
+					set.add(rgb&0xF0F0F0);
+            			}
+        		} 
+	if (size < 100 && size>= 30 ){
+		set = new HashSet<Integer>();
                 for (int row = 0; row < height; row++) {
                         for (int col = 0; col < width; col++) {
                                 int rgb = 0;
@@ -415,12 +494,12 @@ public void show() {
                                 else                   rgb = image.getRGB(col, height - row - 1);
                                 setRGB(col, row, rgb & 0xE0E0E0);
                                 set.add(rgb&0xC0C0C0);
-                            }
-                }
+        		    }
+	        }
 
-        }
+	}
 
-if (size<30 &&  size >= 20 ){
+        if (size<30 &&  size >= 20 ){
                 set = new HashSet<Integer>();
                 for (int row = 0; row < height; row++) {
                         for (int col = 0; col < width; col++) {
@@ -460,7 +539,7 @@ if (size<30 &&  size >= 20 ){
         throw new UnsupportedOperationException("hashCode() is not supported because pictures are mutable");
     }
 
-/**
+   /**
      * Saves the picture to a file in a standard image format.
      * The filetype must be .png or .jpg.
      *
@@ -496,7 +575,7 @@ if (size<30 &&  size >= 20 ){
         }
     }
 
- /**
+   /**
      * Opens a save dialog box when the user selects "Save As" from the menu.
      */
     @Override
@@ -519,14 +598,17 @@ if (size<30 &&  size >= 20 ){
     public static void main(String[] args) {
         Picture picture = new Picture(args[0]);
         System.out.printf("%d-by-%d\n", picture.width(), picture.height());
-//      picture.setSimple(Integer.valueOf(args[1]));
+//	picture.setSimple(Integer.valueOf(args[1]));
         if (args.length>1){picture.setSimple(Integer.valueOf(args[1]));}
-        else picture.setBrightly();
-        // System.out.println(picture.toString());
+	else picture.setBrightly();
+	picture.getZones(1);
+	// System.out.println(picture.toString());
          picture.show();
-         int index = args[0].indexOf(".");
+	 int index = args[0].indexOf(".");
 
-         picture.save(args[0].substring(0, index)+"_1"+args[0].substring(index));
+	 picture.save(args[0].substring(0, index)+"_1"+args[0].substring(index));
     }
 
 }
+
+
